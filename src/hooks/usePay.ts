@@ -7,7 +7,7 @@
  *    covers a budget, so every later payment is a single signature.
  */
 import { useCallback, useState } from 'react'
-import { useAccount, useConfig, useCapabilities } from 'wagmi'
+import { useAccount, useConfig } from 'wagmi'
 import {
   simulateContract,
   writeContract,
@@ -56,13 +56,11 @@ export function usePay(lang: 'tr' | 'en') {
   const config = useConfig()
   const { address, chainId } = useAccount()
   const usdc = useUsdc()
-  const caps = useCapabilities({ query: { enabled: !!address, retry: false } })
   const [state, setState] = useState<PayState>(IDLE)
 
-  const atomic = (() => {
-    const c = (caps.data as Record<number, { atomic?: { status?: string } }> | undefined)?.[CHAIN_ID]
-    return c?.atomic?.status === 'supported' || c?.atomic?.status === 'ready'
-  })()
+  // EIP-5792 batching is disabled: MetaMask offers a smart-account upgrade for it, which is not
+  // available on Arc and shows a blocking alert. Approve → pay (2 prompts, or 1 with a budget) works everywhere.
+  const atomic = false as boolean
 
   const reset = useCallback(() => setState(IDLE), [])
 
