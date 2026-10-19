@@ -105,7 +105,7 @@ export function DeployCard({ onDeployed, compact }: { onDeployed?: () => void; c
         <li className="flex items-center gap-2">
           <span className="step-dot" style={{ background: isConnected && !noGas && native !== undefined ? 'var(--settle-wash)' : 'var(--usdc-wash)', color: isConnected && !noGas && native !== undefined ? 'var(--settle)' : 'var(--usdc-deep)' }}>2</span>
           <span>
-            {T('Gas için test USDC', 'Test USDC for gas')}
+            {NETWORK === 'testnet' ? T('Gas için test USDC', 'Test USDC for gas') : T('Gas için USDC (≥ 0,3)', 'USDC for gas (≥ 0.3)')}
             {native !== undefined && <span className="num faint"> · {T('bakiye', 'balance')} {Number(formatUnits(native, 18)).toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US', { maximumFractionDigits: 4 })} USDC</span>}
           </span>
         </li>
