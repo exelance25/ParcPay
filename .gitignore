@@ -1,0 +1,26 @@
+# dependencies & builds
+node_modules
+dist
+dist-single
+contracts/out
+contracts/cache
+broadcast
+*.log
+
+# secrets — never commit
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+keystore/
+
+# Arc Studio local runtime logs (may contain wallet addresses / RPC payloads)
+console.jsonl
+traces.jsonl
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
