@@ -126,6 +126,10 @@ export function DeployCard({ onDeployed, compact }: { onDeployed?: () => void; c
         </div>
       )}
 
+      {isConnected && noGas && NETWORK === 'mainnet' && (
+        <p className="inset p-3 mt-4 small m-0">{T('Kurulum için cüzdanında Arc Mainnet’te en az 0,3 USDC olmalı. USDC’yi başka bir zincirden Arc’a köprüleyebilir ya da bir borsadan Arc ağına çekebilirsin.', 'You need at least 0.3 USDC on Arc Mainnet. Bridge USDC to Arc or withdraw it from an exchange to the Arc network.')}</p>
+      )}
+
       <dl className="mt-4 grid gap-1 small m-0">
         <div className="flex flex-wrap gap-x-2"><dt className="faint">{T('Adres', 'Address')}</dt><dd className="m-0 num break-all">{predicted} {matches ? '✓' : '✗'}</dd></div>
         {factoryOk === false && <div style={{ color: 'var(--danger)' }}>{T('Bu ağda CREATE2 kurucu bulunamadı.', 'CREATE2 deployer not found on this network.')}</div>}
