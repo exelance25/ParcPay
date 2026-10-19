@@ -7,9 +7,9 @@ import { addressUrl, NETWORK_LABEL } from '@/chain'
 function HeroReceipt() {
   const T = useT()
   const lines: [string, string, string][] = [
-    ['Ayşe · tasarım', '0x7a1c…41e2', '500,00'],
-    ['Deniz · yazılım', '0x3be0…9d07', '300,00'],
-    ['Stüdyo kasası', '0xc0de…77a1', '200,00'],
+    [T('Ayşe · tasarım', 'Ayşe · design'), '0x7a1c…41e2', T('500,00', '500.00')],
+    [T('Deniz · yazılım', 'Deniz · engineering'), '0x3be0…9d07', T('300,00', '300.00')],
+    [T('Stüdyo kasası', 'Studio treasury'), '0xc0de…77a1', T('200,00', '200.00')],
   ]
   return (
     <div className="receipt p-5 sm:p-6 w-full max-w-md mx-auto lg:mx-0" aria-label={T('Örnek bölünmüş ödeme makbuzu', 'Sample split payment receipt')}>
@@ -19,7 +19,7 @@ function HeroReceipt() {
       </div>
       <div className="mt-3 flex items-baseline justify-between gap-3">
         <span className="muted">{T('Toplam', 'Total')}</span>
-        <span className="num h-display" style={{ fontSize: '2.2rem' }}>1.000,00 <span style={{ fontSize: '1rem', fontWeight: 600 }}>USDC</span></span>
+        <span className="num h-display" style={{ fontSize: '2.2rem' }}>{T('1.000,00', '1,000.00')} <span style={{ fontSize: '1rem', fontWeight: 600 }}>USDC</span></span>
       </div>
       <hr className="rule-dash my-4" />
       <ul className="space-y-3 m-0 p-0 list-none">
@@ -34,7 +34,7 @@ function HeroReceipt() {
         ))}
         <li className="split-line flex items-center justify-between gap-3 small" style={{ animationDelay: '1.05s' }}>
           <span className="muted">{T('ParcPay ücreti (sabit)', 'ParcPay fee (flat)')}</span>
-          <span className="num muted">0,001</span>
+          <span className="num muted">{T('0,001', '0.001')}</span>
         </li>
       </ul>
       <hr className="rule-dash my-4" />
@@ -59,21 +59,21 @@ function Slides() {
       tag: T('Bölerek gönder', 'Split'),
       title: T('50 alıcıya tek işlemde, 0,001 USDC ücretle', 'Up to 50 recipients in one transaction, 0.001 USDC fee'),
       body: T('Tutarı yüzde ya da kuruşu kuruşuna sabit miktarla dağıt. Ya hepsi gider ya hiçbiri: yarım kalan ödeme yok.', 'Split by percentage or exact amounts. All-or-nothing: no half-finished payouts.'),
-      rows: [['3 kurucu ortak', '1.000,00'], ['Ücret', '0,001'], ['İmza', '1']],
+      rows: [[T('3 kurucu ortak', '3 co-founders'), T('1.000,00', '1,000.00')], [T('Ücret', 'Fee'), T('0,001', '0.001')], [T('İmza', 'Signatures'), '1']],
       foot: T('Ücret alıcı sayısından bağımsız ve sabit.', 'The fee is flat, whatever the recipient count.'),
     },
     {
       tag: T('İleri tarihli ödeme', 'Scheduled'),
       title: T('Bugün imzala, vadesi gelince ödensin', 'Sign today, it pays on the due date'),
       body: T('Tek bir EIP-712 imzası bir “oturum anahtarı” gibi çalışır: tutar, alıcı, tarih ve süre kilitlidir. Vade gelince alıcı ödemeyi kendisi tetikler; kontrat imzayı zincirde doğrular.', 'One EIP-712 signature acts like a session key: amount, recipients, date and expiry are locked. When due, the recipient triggers it; the contract verifies the signature onchain.'),
-      rows: [['Kira · 1 Aralık', '850,00'], ['Kim tetikler', T('alıcı', 'recipient')], ['İptal', T('zincirde, anında', 'onchain, instant')]],
+      rows: [[T('Kira · 1 Aralık', 'Rent · 1 December'), T('850,00', '850.00')], [T('Kim tetikler', 'Triggered by'), T('alıcı', 'recipient')], [T('İptal', 'Cancel'), T('zincirde, anında', 'onchain, instant')]],
       foot: T('Para vadeye kadar senin cüzdanında kalır.', 'Funds stay in your wallet until the due date.'),
     },
     {
       tag: T('Maaş', 'Payroll'),
       title: T('12 aylık bordro tek imzayla', 'A 12-month payroll in one signature'),
       body: T('Tekrarlayan emir: her 30 günde bir, 12 kez. Çalışan maaşını gün gelince kendisi çeker; kaçırılan dönemler sırayla ödenir.', 'Recurring order: every 30 days, 12 times. Employees pull salary when it is due; missed periods can be caught up in order.'),
-      rows: [['4 çalışan × 12 ay', '48 ödeme'], [T('İmza', 'Signatures'), '1'], [T('Toplam ücret', 'Total fees'), '0,012']],
+      rows: [[T('4 çalışan × 12 ay', '4 employees × 12 months'), T('48 ödeme', '48 payments')], [T('İmza', 'Signatures'), '1'], [T('Toplam ücret', 'Total fees'), T('0,012', '0.012')]],
       foot: T('“Tümünü geri al” ile bütün emirler tek işlemde durur.', '“Revoke all” stops every order in one transaction.'),
     },
     {
@@ -87,14 +87,14 @@ function Slides() {
       tag: T('Oyun & NFT', 'Games & NFTs'),
       title: T('Turnuva ödülü ve telif paylaşımı', 'Prize pools and royalty splits'),
       body: T('İlk üçe 50/30/20, koleksiyon satışında sanatçı/geliştirici/topluluk payı. Kazananlar listesi tek işlemde ödenir, herkes kendi payını explorer’da görür.', '50/30/20 for the top three, artist/dev/community shares on a sale. The whole winner list is paid in one transaction, each share visible on the explorer.'),
-      rows: [['1.', '500,00'], ['2.', '300,00'], ['3.', '200,00']],
+      rows: [['1.', T('500,00', '500.00')], ['2.', T('300,00', '300.00')], ['3.', T('200,00', '200.00')]],
       foot: T('Onay ve ödeme tek işlemde, tek imzayla.', 'Approve and pay in one transaction, one signature.'),
     },
     {
       tag: 'Arc',
       title: T('Gas da USDC, fiyat da USDC', 'Gas in USDC, prices in USDC'),
       body: T('Arc’ta ayrı bir gas token’ı yok: tek bakiye, öngörülebilir ücret, saniyenin altında kesinlik. Kullanıcı yalnızca dolar düşünür.', 'Arc has no separate gas token: one balance, predictable fees, sub-second finality. Users only think in dollars.'),
-      rows: [['Gas', 'USDC'], [T('Kesinlik', 'Finality'), '< 1 sn'], ['Token', '0x3600…0000']],
+      rows: [['Gas', 'USDC'], [T('Kesinlik', 'Finality'), T('< 1 sn', '< 1 s')], ['Token', '0x3600…0000']],
       foot: T('Circle CCTP ile başka zincirlerden USDC getirilebilir.', 'Bring USDC from other chains with Circle CCTP.'),
     },
   ]
