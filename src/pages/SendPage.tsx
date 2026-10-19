@@ -20,7 +20,7 @@ export function SendPage({ params }: { params: URLSearchParams }) {
   const { isConnected, chainId } = useAccount()
   const { switchChain } = useSwitchChain()
   const wrongNet = isConnected && chainId !== CHAIN_ID
-  const { pay, reset, state, usdc, atomic } = usePay(lang)
+  const { pay, reset, state, usdc } = usePay(lang)
 
   // Payment request links (#/send?r=<addr>:<amount>,…&memo=…) only PREFILL the form.
   // Nothing is ever sent until the user reviews and confirms.
@@ -50,7 +50,7 @@ export function SendPage({ params }: { params: URLSearchParams }) {
   const budgetRaw = budgetOn ? toRaw(budget) ?? 0n : 0n
   const known = isConnected && !built.error
   const needsApproval = !known || usdc.allowance < grand
-  const signatures = !needsApproval ? 1 : atomic ? 1 : 2
+  const signatures = 1
   const busy = ['wallet', 'pending'].includes(state.approve) || ['wallet', 'pending'].includes(state.pay)
   const done = state.pay === 'done'
 
@@ -112,11 +112,11 @@ export function SendPage({ params }: { params: URLSearchParams }) {
       <div className="panel p-5">
         <div className="flex items-center justify-between">
           <h2 className="t-2">{T('İmzalar', 'Signatures')}</h2>
-          <span className="pill pill-blue">{known ? `${signatures} ${T('imza', signatures === 1 ? 'signature' : 'signatures')}` : T('1–2 imza', '1–2 signatures')}</span>
+          <span className="pill pill-blue">{`${signatures} ${T('imza', 'signature')}`}</span>
         </div>
         <ul className="mt-4 space-y-3 p-0 m-0 list-none">
-          {state.batched ? (
-            <Step n={1} label={T('Onay + ödeme (tek pencere)', 'Approve + pay (one prompt)')} state={state.pay} />
+          {state.batched || needsApproval ? (
+            <Step n={1} label={T('Onay + ödeme tek işlemde', 'Approve + pay in one transaction')} state={state.pay} hint={T('Arc Multicall3From ile', 'via Arc Multicall3From')} />
           ) : (
             <>
               <Step

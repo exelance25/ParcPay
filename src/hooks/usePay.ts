@@ -1,10 +1,10 @@
 /**
  * usePay — the 1–2 signature payment flow.
  *
- *  • Allowance already covers total + fee → 1 signature (splitPay).
- *  • Wallet supports atomic batching (EIP-5792, e.g. smart accounts) → 1 prompt: approve + splitPay.
- *  • Otherwise → 2 signatures: approve, then splitPay. With "allow future payments" the approval
- *    covers a budget, so every later payment is a single signature.
+ *  Always ONE wallet confirmation:
+ *  • Allowance already covers total + fee → splitPay directly.
+ *  • Otherwise → USDC.approve + splitPay batched in one tx via Arc's Multicall3From
+ *    (msg.sender stays the user's wallet for both calls; all-or-nothing).
  */
 import { useCallback, useState } from 'react'
 import { useAccount, useConfig } from 'wagmi'
@@ -12,10 +12,8 @@ import {
   simulateContract,
   writeContract,
   waitForTransactionReceipt,
-  sendCalls,
-  waitForCallsStatus,
 } from '@wagmi/core'
-import { encodeFunctionData, erc20Abi } from 'viem'
+import { encodeFunctionData, erc20Abi, parseAbi } from 'viem'
 import { CHAIN_ID, USDC_ADDRESS } from '@/chain'
 import { PARCPAY_ADDRESS, PARCPAY_ABI, type Transfer } from '@/contracts/parcpay'
 import { explainError } from '@/lib/errors'
@@ -34,6 +32,14 @@ export interface PayState {
 }
 
 const IDLE: PayState = { approve: 'idle', pay: 'idle' }
+
+/** Arc predeploy (mainnet + testnet): batches calls while keeping the user's wallet as msg.sender. */
+const MULTICALL3_FROM = '0x522fAf9A91c41c443c66765030741e4AaCe147D0' as const
+const MULTICALL3_FROM_ABI = parseAbi([
+  'struct Call3 { address target; bool allowFailure; bytes callData; }',
+  'struct Result { bool success; bytes returnData; }',
+  'function aggregate3(Call3[] calls) payable returns (Result[] returnData)',
+])
 
 function isUserRejection(e: unknown) {
   const m = String((e as { message?: string })?.message ?? e).toLowerCase()
@@ -58,10 +64,6 @@ export function usePay(lang: 'tr' | 'en') {
   const usdc = useUsdc()
   const [state, setState] = useState<PayState>(IDLE)
 
-  // EIP-5792 batching is disabled: MetaMask offers a smart-account upgrade for it, which is not
-  // available on Arc and shows a blocking alert. Approve → pay (2 prompts, or 1 with a budget) works everywhere.
-  const atomic = false as boolean
-
   const reset = useCallback(() => setState(IDLE), [])
 
   const pay = useCallback(
@@ -80,46 +82,32 @@ export function usePay(lang: 'tr' | 'en') {
         }
         const needsApproval = usdc.allowance < needed
 
-        // Try one-prompt batching (EIP-5792) when the wallet advertises it; if the wallet refuses
-        // for this chain (MetaMask does on some networks), silently fall back to approve → pay.
-        if (needsApproval && atomic) {
-          try {
-            setState({ approve: 'wallet', pay: 'wallet', batched: true })
-            const { id } = await sendCalls(config, {
-              chainId: CHAIN_ID,
-              calls: [
-                { to: USDC_ADDRESS, data: encodeFunctionData({ abi: erc20Abi, functionName: 'approve', args: [PARCPAY_ADDRESS, approveAmount] }) },
-                { to: PARCPAY_ADDRESS, data: encodeFunctionData({ abi: PARCPAY_ABI, functionName: 'splitPay', args }) },
-              ],
-            })
-            setState({ approve: 'pending', pay: 'pending', batched: true })
-            const res = await waitForCallsStatus(config, { id })
-            const hash = res.receipts?.[res.receipts.length - 1]?.transactionHash
-            if (res.status !== 'success' || !hash) throw new Error('batch failed')
-            setState({ approve: 'done', pay: 'done', hash, batched: true })
-            addActivity({ kind: 'split', hash, total: total.toString(), fee: fee.toString(), recipients: transfers.map((t) => ({ to: t.to, amount: t.amount.toString() })), memo })
-            void usdc.refetch()
-            return
-          } catch (e) {
-            if (isUserRejection(e)) throw e
-            console.warn('[parcpay] batched call unavailable, falling back to approve → pay', e)
-            setState({ approve: 'idle', pay: 'idle' })
-          }
-        }
-
+        // One transaction: USDC.approve + ParcPay.splitPay through Arc's Multicall3From,
+        // which keeps the wallet as msg.sender for both calls. If either call fails, both revert.
         if (needsApproval) {
-          setState({ approve: 'wallet', pay: 'idle' })
-          const approveReq = { chainId: CHAIN_ID, address: USDC_ADDRESS, abi: erc20Abi, functionName: 'approve', args: [PARCPAY_ADDRESS, approveAmount] } as const
-          const approveHash = await withFeeFallback(
-            () => writeContract(config, { ...approveReq, ...fees }),
-            () => writeContract(config, approveReq),
+          setState({ approve: 'wallet', pay: 'wallet', batched: true })
+          const calls = [
+            { target: USDC_ADDRESS, allowFailure: false, callData: encodeFunctionData({ abi: erc20Abi, functionName: 'approve', args: [PARCPAY_ADDRESS, approveAmount] }) },
+            { target: PARCPAY_ADDRESS, allowFailure: false, callData: encodeFunctionData({ abi: PARCPAY_ABI, functionName: 'splitPay', args }) },
+          ] as const
+          const { request } = await simulateContract(config, {
+            chainId: CHAIN_ID, account: address, address: MULTICALL3_FROM, abi: MULTICALL3_FROM_ABI, functionName: 'aggregate3', args: [calls],
+          })
+          const { gasPrice: _g, ...mreq } = request as typeof request & { gasPrice?: bigint }
+          void _g
+          const hash = await withFeeFallback(
+            () => writeContract(config, { ...mreq, ...fees } as typeof request),
+            () => writeContract(config, { ...mreq, maxFeePerGas: undefined, maxPriorityFeePerGas: undefined } as typeof request),
           )
-          setState({ approve: 'pending', pay: 'idle', approveHash })
-          await waitForTransactionReceipt(config, { chainId: CHAIN_ID, hash: approveHash })
-          setState((s) => ({ ...s, approve: 'done' }))
-        } else {
-          setState({ approve: 'done', pay: 'idle' })
+          setState({ approve: 'pending', pay: 'pending', hash, batched: true })
+          const receipt = await waitForTransactionReceipt(config, { chainId: CHAIN_ID, hash })
+          if (receipt.status !== 'success') throw new Error(lang === 'tr' ? 'İşlem zincirde geri alındı.' : 'Transaction reverted.')
+          setState({ approve: 'done', pay: 'done', hash, batched: true })
+          addActivity({ kind: 'split', hash, total: total.toString(), fee: fee.toString(), recipients: transfers.map((t) => ({ to: t.to, amount: t.amount.toString() })), memo })
+          void usdc.refetch()
+          return
         }
+        setState({ approve: 'done', pay: 'idle' })
 
         setState((s) => ({ ...s, pay: 'wallet' }))
         const { request } = await simulateContract(config, {
@@ -148,8 +136,8 @@ export function usePay(lang: 'tr' | 'en') {
         void usdc.refetch()
       }
     },
-    [address, chainId, config, usdc, atomic, lang],
+    [address, chainId, config, usdc, lang],
   )
 
-  return { pay, reset, state, usdc, atomic }
+  return { pay, reset, state, usdc }
 }

@@ -9,7 +9,7 @@ ParcPay is a USDC payment router on **Arc**, built in Arc Studio.
 - **Payroll & subscriptions** — the same order repeats every N days for M runs. Cancel one order or revoke all onchain.
 - **Invoices** — 32-byte memo stored in the `Paid` event; shareable payment-request links.
 - **Games & NFTs** — prize pools and royalty splits in one tx.
-- **1–2 signatures** — 1 when allowance suffices, 1 prompt on EIP-5792 smart wallets, otherwise approve + pay (optional budget makes later payments 1 signature).
+- **1 signature** — approve + pay are batched into one transaction through Arc's `Multicall3From` predeploy (wallet stays `msg.sender`; all-or-nothing).
 
 | | |
 |---|---|

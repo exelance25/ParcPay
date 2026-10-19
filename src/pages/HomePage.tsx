@@ -88,7 +88,7 @@ function Slides() {
       title: T('Turnuva ödülü ve telif paylaşımı', 'Prize pools and royalty splits'),
       body: T('İlk üçe 50/30/20, koleksiyon satışında sanatçı/geliştirici/topluluk payı. Kazananlar listesi tek işlemde ödenir, herkes kendi payını explorer’da görür.', '50/30/20 for the top three, artist/dev/community shares on a sale. The whole winner list is paid in one transaction, each share visible on the explorer.'),
       rows: [['1.', '500,00'], ['2.', '300,00'], ['3.', '200,00']],
-      foot: T('Akıllı cüzdanlarda onay + ödeme tek pencerede.', 'Smart wallets approve and pay in a single prompt.'),
+      foot: T('Onay ve ödeme tek işlemde, tek imzayla.', 'Approve and pay in one transaction, one signature.'),
     },
     {
       tag: 'Arc',
@@ -211,9 +211,9 @@ export function HomePage() {
             <h2 className="t-2">{T('Kaç imza?', 'How many signatures?')}</h2>
             <ol className="mt-5 space-y-4 p-0 m-0 list-none">
               {[
-                [T('İlk ödeme', 'First payment'), T('Onay + gönder: 2 imza. “Sonraki ödemeler için izin ver” seçilirse bütçe bir kez onaylanır.', 'Approve + send: 2 signatures. Pick “allow future payments” to approve a budget once.')],
+                [T('İlk ödeme', 'First payment'), T('Onay ve gönderim Arc’ın Multicall3From sözleşmesiyle tek işlemde: 1 imza.', 'Approve and send in one transaction via Arc’s Multicall3From: 1 signature.')],
                 [T('Sonraki ödemeler', 'Next payments'), T('Bütçe yettiği sürece 1 imza.', '1 signature while the budget lasts.')],
-                [T('Akıllı cüzdan', 'Smart wallet'), T('EIP-5792 destekleyen cüzdanlarda onay ve ödeme tek pencerede.', 'Wallets with EIP-5792 approve and pay in one prompt.')],
+                [T('Bütçe izni', 'Budget'), T('“Sonraki ödemeler için izin ver” ile sonraki ödemeler doğrudan gönderilir.', 'With “allow future payments”, later payments go straight through.')],
                 [T('Planlı / maaş', 'Scheduled / payroll'), T('Tek EIP-712 imzası; ödemeleri alıcı ya da bot tetikler.', 'One EIP-712 signature; recipients or a bot trigger the runs.')],
               ].map(([a, b], k) => (
                 <li key={k} className="flex gap-3">
